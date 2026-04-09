@@ -1,0 +1,73 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  paths:
+      - 'backend-spring/**'
+      - 'frontend-vue/**'
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'backend-spring/')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Build backend
+      run: |
+        cd backend-spring
+        ./mvnw clean package -DskipTests
+    
+    - name: Build Docker image
+      run: |
+        docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/threatcase-backend ./backend-spring
+    
+    - name: Push to Docker Hub
+      run: |
+        echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/threatcase-backend
+    
+    - name: Deploy to production
+      run: |
+        # Deploy via SSH or your deployment method
+        echo "Backend deployed successfully"
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'frontend-vue/')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Build frontend
+      run: |
+        cd frontend-vue
+        npm ci
+        npm run build
+    
+    - name: Build Docker image
+      run: |
+        docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/threatcase-frontend ./frontend-vue
+    
+    - name: Push to Docker Hub
+      run: |
+        echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/threatcase-frontend
+    
+    - name: Deploy to production
+      run: |
+        # Deploy via SSH or your deployment method
+        echo "Frontend deployed successfully"
