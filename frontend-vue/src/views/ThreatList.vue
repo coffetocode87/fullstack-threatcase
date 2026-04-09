@@ -41,8 +41,8 @@
         </tr>
 
         <!-- Data -->
-        <tr v-else v-for="t in threats" :key="t.id">
-          <td>{{ t.id }}</td>
+        <tr v-else v-for="(t, index) in threats" :key="t.id">
+          <td>{{ index + 1 }}</td>
           <td>{{ t.ruleId }}</td>
           <td>{{ t.threatType }}</td>
           <td>{{ t.platform }}</td>
