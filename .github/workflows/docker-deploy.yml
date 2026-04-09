@@ -1,4 +1,5 @@
 name: Build and Deploy Docker Images
+# Auto-trigger on push to main branch
 
 on:
   push:

@@ -1,7 +1,7 @@
 <template>
   <div class="login-page">
     <div class="login-card">
-      <h2>🔐 Threat Intelligence Pantek</h2>
+      <h2>🔐 Threat Intelligence</h2>
       <p class="subtitle">Secure Access Portal</p>
 
       <div class="input-group">

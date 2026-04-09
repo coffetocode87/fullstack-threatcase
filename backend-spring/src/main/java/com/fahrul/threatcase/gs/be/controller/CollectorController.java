@@ -21,6 +21,8 @@ import org.springframework.beans.factory.annotation.Value;
 
 import com.fahrul.threatcase.gs.be.collector.ThreatCastCollectorService;
 import com.fahrul.threatcase.gs.be.dto.webhook.ThreatcastWebhookRequest;
+import com.fahrul.threatcase.gs.be.entity.ThreatEvent;
+import com.fahrul.threatcase.gs.be.repository.ThreatEventRepository;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,7 @@ import java.util.List;
 public class CollectorController {
 
 	private final ThreatCastCollectorService service;
+	private final ThreatEventRepository threatEventRepository;
 	
 	@Value("${threatcast.webhook.secret}")
 	private String secret;
@@ -60,29 +63,40 @@ public class CollectorController {
 	    String appName = (String) requestBody.get("appName");
 	    List<Map<String, Object>> threats = (List<Map<String, Object>>) requestBody.get("threats");
 	    
-	    // Log or process the received data
 	    System.out.println("Received webhook with ruleId: " + ruleId);
 	    System.out.println("Rule name: " + ruleName);
 	    System.out.println("Number of threats: " + (threats != null ? threats.size() : 0));
 	    
-	    if (threats != null && !threats.isEmpty()) {
-	        for (Map<String, Object> threat : threats) {
-	            System.out.println("Threat ID: " + threat.get("id"));
-	            System.out.println("Threat Type: " + threat.get("threatType"));
-	            System.out.println("Device: " + threat.get("deviceModel"));
-	        }
-	    }
-	    
-	    // Convert Map to ThreatcastWebhookRequest and save to database
+	    // Simple approach: save each threat as ThreatEvent directly
 	    try {
-	        System.out.println("Converting request body to DTO...");
-	        System.out.println("Request body: " + requestBody.toString());
-	        
-	        ThreatcastWebhookRequest request = objectMapper.convertValue(requestBody, ThreatcastWebhookRequest.class);
-	        System.out.println("DTO converted successfully: " + request.toString());
-	        
-	        service.saveThreat(request);
-	        System.out.println("Threat data saved to database successfully!");
+	        if (threats != null && !threats.isEmpty()) {
+	            for (Map<String, Object> threat : threats) {
+	                ThreatEvent threatEvent = new ThreatEvent();
+	                threatEvent.setRuleId(ruleId);
+	                threatEvent.setRuleName(ruleName);
+	                threatEvent.setAppId(appId);
+	                threatEvent.setAppName(appName);
+	                threatEvent.setThreatId((String) threat.get("id"));
+	                threatEvent.setThreatType((String) threat.get("threatType"));
+	                threatEvent.setAppVersion((String) threat.get("appVersion"));
+	                threatEvent.setOs((String) threat.get("os"));
+	                threatEvent.setOsVersion((String) threat.get("osVersion"));
+	                threatEvent.setDeviceModel((String) threat.get("deviceModel"));
+	                threatEvent.setDeviceId((String) threat.get("deviceId"));
+	                threatEvent.setCountry((String) threat.get("country"));
+	                threatEvent.setIpAddress((String) threat.get("IP"));
+	                threatEvent.setAppUserId((String) threat.get("appUserId"));
+	                
+	                // Save raw JSON for audit
+	                threatEvent.setRawJson(objectMapper.writeValueAsString(threat));
+	                
+	                // Save to database using repository
+	                threatEventRepository.save(threatEvent);
+	                
+	                System.out.println("Saved threat: " + threat.get("id") + " - " + threat.get("threatType"));
+	            }
+	        }
+	        System.out.println("All threats saved to database!");
 	    } catch (Exception e) {
 	        System.err.println("Failed to save threat data: " + e.getMessage());
 	        e.printStackTrace();
