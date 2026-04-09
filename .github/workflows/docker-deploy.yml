@@ -1,0 +1,46 @@
+name: Build and Deploy Docker Images
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    # Build and push backend image
+    - name: Build backend Docker image
+      run: |
+        docker build -t coffetocode87/threatcase-backend:latest ./backend-spring
+        docker tag coffetocode87/threatcase-backend:latest coffetocode87/threatcase-backend:${{ github.sha }}
+    
+    - name: Push backend to Docker Hub
+      run: |
+        echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u coffetocode87 --password-stdin
+        docker push coffetocode87/threatcase-backend:latest
+        docker push coffetocode87/threatcase-backend:${{ github.sha }}
+    
+    # Build and push frontend image  
+    - name: Build frontend Docker image
+      run: |
+        docker build -t coffetocode87/threatcase-frontend:latest ./frontend-vue
+        docker tag coffetocode87/threatcase-frontend:latest coffetocode87/threatcase-frontend:${{ github.sha }}
+    
+    - name: Push frontend to Docker Hub
+      run: |
+        echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u coffetocode87 --password-stdin
+        docker push coffetocode87/threatcase-frontend:latest
+        docker push coffetocode87/threatcase-frontend:${{ github.sha }}
+    
+    # Deploy to production (optional - if you have Docker Compose on production)
+    - name: Deploy to production
+      run: |
+        echo "Images pushed to Docker Hub:"
+        echo "- Backend: coffetocode87/threatcase-backend:latest"  
+        echo "- Frontend: coffetocode87/threatcase-frontend:latest"
+        echo ""
+        echo "To deploy on production server, run:"
+        echo "docker-compose pull && docker-compose up -d"
