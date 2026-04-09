@@ -56,7 +56,8 @@ public class CollectorController {
 	    // Process the webhook data with the expected format
 	    String ruleId = (String) requestBody.get("ruleId");
 	    String ruleName = (String) requestBody.get("ruleName");
-	    String appId = (String) requestBody.get("appName");
+	    String appId = (String) requestBody.get("appId");
+	    String appName = (String) requestBody.get("appName");
 	    List<Map<String, Object>> threats = (List<Map<String, Object>>) requestBody.get("threats");
 	    
 	    // Log or process the received data
@@ -74,7 +75,12 @@ public class CollectorController {
 	    
 	    // Convert Map to ThreatcastWebhookRequest and save to database
 	    try {
+	        System.out.println("Converting request body to DTO...");
+	        System.out.println("Request body: " + requestBody.toString());
+	        
 	        ThreatcastWebhookRequest request = objectMapper.convertValue(requestBody, ThreatcastWebhookRequest.class);
+	        System.out.println("DTO converted successfully: " + request.toString());
+	        
 	        service.saveThreat(request);
 	        System.out.println("Threat data saved to database successfully!");
 	    } catch (Exception e) {
