@@ -6,6 +6,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
 
 @Configuration
 public class SecurityConfig {
@@ -23,8 +24,7 @@ public class SecurityConfig {
 
 		http
 				// ✅ WAJIB TAMBAH INI
-				.cors(cors -> {
-				})
+				.cors(cors -> {})
 
 				.csrf(csrf -> csrf.disable())
 

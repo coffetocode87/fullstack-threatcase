@@ -24,6 +24,9 @@ import com.fahrul.threatcase.gs.be.dto.webhook.ThreatcastWebhookRequest;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
 
 @RestController
 @RequestMapping("/collector")
@@ -47,23 +50,37 @@ public class CollectorController {
 	
 	@PostMapping("/webhook")
 	public ResponseEntity<?> webhook(
-	        @RequestHeader("x-threatcast-webhook-signature") String signature,
-	        @RequestBody String rawBody) throws JsonMappingException, JsonProcessingException {
+	        @RequestHeader(value = "x-threatcast-webhook-signature", required = false) String signature,
+	        @RequestBody Map<String, Object> requestBody) throws JsonMappingException, JsonProcessingException {
 
-	    String calculated = hmacSha256(secret, rawBody);
+	    // Process the webhook data with the expected format
+	    String ruleId = (String) requestBody.get("ruleId");
+	    String ruleName = (String) requestBody.get("ruleName");
+	    String appId = (String) requestBody.get("appName");
+	    List<Map<String, Object>> threats = (List<Map<String, Object>>) requestBody.get("threats");
+	    
+	    // Log or process the received data
+	    System.out.println("Received webhook with ruleId: " + ruleId);
+	    System.out.println("Rule name: " + ruleName);
+	    System.out.println("Number of threats: " + (threats != null ? threats.size() : 0));
+	    
+	    if (threats != null && !threats.isEmpty()) {
+	        for (Map<String, Object> threat : threats) {
+	            System.out.println("Threat ID: " + threat.get("id"));
+	            System.out.println("Threat Type: " + threat.get("threatType"));
+	            System.out.println("Device: " + threat.get("deviceModel"));
+	        }
+	    }
 
-//	    if (!signature.equals(calculated)) {
-//	        return ResponseEntity.status(401).body("Invalid signature");
-//	    }
-
-	    ThreatcastWebhookRequest request =
-	        objectMapper.readValue(rawBody, ThreatcastWebhookRequest.class);
-
-	    service.saveThreat(request);
-
-	    return ResponseEntity.ok("saved");
+	    return ResponseEntity.ok(Map.of(
+	        "status", "success",
+	        "message", "Webhook received successfully",
+	        "ruleId", ruleId,
+	        "threatsProcessed", threats != null ? threats.size() : 0
+	    ));
 	}
 	
+		
 	private String hmacSha256(String secret, String data) {
 
 	    try {

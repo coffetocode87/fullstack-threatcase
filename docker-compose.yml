@@ -1,37 +1,41 @@
-version: "3.9"
+version: '3.8'
 
 services:
-  db:
+  mysql:
     image: mysql:8
     container_name: mysql-db
     restart: always
     environment:
-      MYSQL_DATABASE: threatcastgs
       MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: threatcastgs
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppass
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
-      - db_data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
 
   backend:
-    build: ./backend
+    build: ./backend-spring
     container_name: spring-backend
+    restart: always
     depends_on:
-      - db
+      - mysql
     ports:
       - "8081:8081"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/threatcastgs?useSSL=false&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/threatcastgs?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: appuser
+      SPRING_DATASOURCE_PASSWORD: apppass
 
   frontend:
-    build: ./frontend
+    build: ./frontend-vue
     container_name: vue-frontend
+    restart: always
     ports:
       - "3000:80"
     depends_on:
       - backend
 
 volumes:
-  db_data:
+  mysql_data:

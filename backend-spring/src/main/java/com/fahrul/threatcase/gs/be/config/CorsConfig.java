@@ -14,7 +14,10 @@ public class CorsConfig {
 		CorsConfiguration config = new CorsConfiguration();
 
 		config.setAllowCredentials(true);
-		config.addAllowedOrigin("http://localhost:5173"); // frontend Vue
+		config.addAllowedOrigin("http://localhost:5173"); // frontend Vue dev
+		config.addAllowedOrigin("http://localhost:3000"); // frontend Vue production
+		config.addAllowedOrigin("https://threat-monitoring-gs.rmldev.my.id");
+		config.addAllowedOriginPattern("https://*.rmldev.my.id");
 		config.addAllowedHeader("*");
 		config.addAllowedMethod("*");
 
