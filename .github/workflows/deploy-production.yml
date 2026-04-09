@@ -1,0 +1,84 @@
+name: Deploy to Production Server
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'backend-spring/')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Build backend JAR
+      run: |
+        cd backend-spring
+        chmod +x mvnw
+        ./mvnw clean package -DskipTests
+    
+    - name: Deploy to production server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.PROD_HOST }}
+        username: ${{ secrets.PROD_USER }}
+        key: ${{ secrets.PROD_SSH_KEY }}
+        script: |
+          cd /opt/threatcase
+          
+          # Backup current JAR
+          cp backend-spring/target/*.jar backend-spring/target/backup-$(date +%Y%m%d_%H%M%S).jar 2>/dev/null || true
+          
+          # Copy new JAR
+          scp -o StrictHostKeyChecking=no backend-spring/target/*.jar ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}:/opt/threatcase/backend-spring/target/
+          
+          # Restart backend service
+          sudo systemctl restart threatcase-backend
+          
+          echo "Backend deployed successfully"
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'frontend-vue/')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Build frontend
+      run: |
+        cd frontend-vue
+        npm ci
+        npm run build
+    
+    - name: Deploy to production server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.PROD_HOST }}
+        username: ${{ secrets.PROD_USER }}
+        key: ${{ secrets.PROD_SSH_KEY }}
+        script: |
+          cd /opt/threatcase
+          
+          # Backup current build
+          sudo cp -r frontend-vue/dist frontend-vue/backup-$(date +%Y%m%d_%H%M%S) 2>/dev/null || true
+          
+          # Copy new build
+          scp -o StrictHostKeyChecking=no -r frontend-vue/dist/* ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}:/opt/threatcase/frontend-vue/dist/
+          
+          # Restart nginx
+          sudo systemctl reload nginx
+          sudo systemctl restart nginx
+          
+          echo "Frontend deployed successfully"
