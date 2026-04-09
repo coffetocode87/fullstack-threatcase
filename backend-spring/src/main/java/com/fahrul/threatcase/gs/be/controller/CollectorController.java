@@ -71,6 +71,16 @@ public class CollectorController {
 	            System.out.println("Device: " + threat.get("deviceModel"));
 	        }
 	    }
+	    
+	    // Convert Map to ThreatcastWebhookRequest and save to database
+	    try {
+	        ThreatcastWebhookRequest request = objectMapper.convertValue(requestBody, ThreatcastWebhookRequest.class);
+	        service.saveThreat(request);
+	        System.out.println("Threat data saved to database successfully!");
+	    } catch (Exception e) {
+	        System.err.println("Failed to save threat data: " + e.getMessage());
+	        e.printStackTrace();
+	    }
 
 	    return ResponseEntity.ok(Map.of(
 	        "status", "success",
